@@ -16,9 +16,6 @@ const HomeScreen = ( {navigation, route} ) => {
     route.params.check = false;
     setReload(!reload)
   }
-
-  console.log(3)
-  console.log(2)
   
   const getListUser = () => {
     fetch('https://64a04d95ed3c41bdd7a72f4c.mockapi.io/api/listUser')

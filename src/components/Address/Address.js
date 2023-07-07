@@ -7,15 +7,7 @@ import {
   } from 'react-native'
 import styles from './styles'
   
-const Address = ( {onClick ,...restUser} ) => {
-  const user = {
-    id: restUser.id,
-    name: restUser.name,
-    phone: restUser.phone,
-    note: restUser.note,
-    numHouse: restUser.numHouse,
-    region: restUser.region
-  }
+const Address = ( {onClick , user} ) => {
 
   return (
     <View style={styles.item}>
@@ -40,7 +32,7 @@ const Address = ( {onClick ,...restUser} ) => {
           <Text style={{ flex: 1 }}>{user.numHouse}</Text>
           <Text style={{ fontWeight: '300', flex: 2, }}>{user.note}</Text>
         </View>
-        <Text>{user.region}</Text>
+        <Text>{`${user.ward.name}, ${user.district.name}, ${user.province.name}`}</Text>
       </View>
     </View>
   )

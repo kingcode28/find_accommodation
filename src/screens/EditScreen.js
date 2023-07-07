@@ -1,39 +1,46 @@
-import React, {useState} from 'react'
-import { 
-  View, 
+import React, { useState, useEffect } from 'react'
+import {
+  View,
   Text,
+  Alert,
   Image,
   Button,
   TextInput,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,  
+  TouchableOpacity,
 } from 'react-native'
 import axios from 'axios';
+import Api from '../../assets/api'
+import { Dropdown } from 'react-native-element-dropdown';
 
-const EditScreen = ( {navigation, route} ) => {
-  let region = route.params.user.region.split(', ');
-  const [ name, setName ] = useState(route.params.user.name);
-  const [ phone, setPhone ] = useState(route.params.user.phone);
-  const [ city, setCity ] = useState(region[2]);
-  const [ district, setDistrict ] = useState(region[1]);
-  const [ village, setVillage ] = useState(region[0]);
-  const [ numHouse, setNumHouse ] = useState(route.params.user.numHouse);
-  const [ note, setNote ] = useState(route.params.user.note);
-  
+const EditScreen = ({ navigation, route }) => {
+  const [name, setName] = useState(route.params.user.name);
+  const [phone, setPhone] = useState(route.params.user.phone);
+  const [ward, setWard] = useState(route.params.user.ward);
+  const [district, setDistrict] = useState(route.params.user.district);
+  const [province, setProvince] = useState(route.params.user.province);
+  const [numHouse, setNumHouse] = useState(route.params.user.numHouse);
+  const [note, setNote] = useState(route.params.user.note);
+  const [wards, setWards] = useState([]);
+  const [districts, setDistricts] = useState([]);
+  const [provinces, setProvinces] = useState([]);
+
   var user = {
     id: route.params.user.id,
     name: name,
     phone: phone,
+    province: province,
+    district: district,
+    ward: ward,
     numHouse: numHouse,
     note: note,
-    region: `${village}, ${district}, ${city}`
   }
 
-  const urlUser = `https://64a04d95ed3c41bdd7a72f4c.mockapi.io/api/listUser/${user.id}`
+  const urlUser = `${Api.urlGetListUser()}/${user.id}`
 
   const handlerDelete = () => {
-    if(name.length && phone.length && city.length && district.length && village.length && numHouse.length) {
+    if (name.length && phone.length && numHouse.length && Object.keys(ward, district, province).length) {
       axios.delete(urlUser)
         .then(res => res)
         .catch(err => false)
@@ -44,9 +51,9 @@ const EditScreen = ( {navigation, route} ) => {
       return false;
     }
   }
-  
+
   const handlerEdit = () => {
-    if(name.length && phone.length && city.length && district.length && village.length && numHouse.length) {
+    if (name.length && phone.length && numHouse.length && Object.keys(ward, district, province).length) {
       axios.put(urlUser, user)
         .then(res => res)
         .catch(err => false)
@@ -57,6 +64,64 @@ const EditScreen = ( {navigation, route} ) => {
       return false;
     }
   }
+
+  const getListProvinces = async () => {
+    await axios.get(Api.urlGetListProvinces())
+      .then(res => {
+        var data = res.data.map((province) => {
+          return {
+            code: province.code,
+            name: province.name,
+          }
+        })
+        setProvinces(data);
+      })
+      .catch(err => {
+        console.log('Lỗi gọi api tỉnh thành');
+        console.log(err)
+      })
+  }
+
+  const getListDistricts = async (province) => {
+    await axios.get(Api.urlGetListDistricts(province))
+      .then(res => {
+        var data = res.data.districts.map((district) => {
+          return {
+            code: district.code,
+            name: district.name,
+          }
+        })
+        setDistricts(data);
+      })
+      .catch(err => {
+        console.log('Lỗi gọi api quận huyện');
+        console.log(err)
+      })
+  }
+
+  const getListWards = async (district) => {
+    await axios.get(Api.urlGetListWards(district))
+    .then(res => {
+      var data = res.data.wards.map((ward) => {
+        return {
+          code: ward.code,
+          name: ward.name,
+        }
+      })
+      setWards(data);
+    })
+      .catch(err => {
+        console.log('Lỗi gọi api xã');
+        console.log(err)
+      })
+  }
+
+  useEffect(() => {
+    getListProvinces();
+    getListDistricts(province.code);
+    getListWards(district.code);
+  }, [])
+
 
   return (
     <View style={styles.container}>
@@ -83,9 +148,8 @@ const EditScreen = ( {navigation, route} ) => {
           <TextInput
             style={styles.input}
             value={name}
-            // autoFocus={true}
             placeholder='Họ và tên'
-            onChangeText = {(value) => setName(value)}
+            onChangeText={(value) => setName(value)}
           />
           <TextInput
             style={styles.input}
@@ -93,37 +157,70 @@ const EditScreen = ( {navigation, route} ) => {
             maxLength={10}
             placeholder='Số điện thoại'
             keyboardType='phone-pad'
-            onChangeText = {(value) => setPhone(value)}
+            onChangeText={(value) => setPhone(value)}
           />
-          <TextInput
-            style={styles.input}
-            value={city}
-            placeholder='Thành phố / Tỉnh'
-            onChangeText = {(value) => setCity(value)}
+          <Dropdown
+            style={styles.dropdown}
+            placeholderStyle={styles.placeholderStyle}
+            selectedTextStyle={styles.selectedTextStyle}
+            data={provinces}
+            search
+            labelField="name"
+            valueField="code"
+            placeholder='Chọn tỉnh(thành phố)'
+            searchPlaceholder="Tìm kiếm..."
+            value={province}
+            onChange={province => {
+              setProvince(province);
+              getListDistricts(province.code);
+              setDistrict({});
+              setWard({});
+              setWards([]);
+            }}
           />
-          <TextInput
-            style={styles.input}
+          <Dropdown
+            style={styles.dropdown}
+            placeholderStyle={styles.placeholderStyle}
+            selectedTextStyle={styles.selectedTextStyle}
+            data={districts}
+            search
+            labelField="name"
+            valueField="code"
+            placeholder='Chọn quận(huyện)'
+            searchPlaceholder="Tìm kiếm..."
             value={district}
-            placeholder='Quận / Huyện'
-            onChangeText = {(value) => setDistrict(value)}
+            onChange={district => {
+              setDistrict(district);
+              getListWards(district.code);
+              setWard({});
+            }}
           />
-          <TextInput
-            style={styles.input}
-            value={village}
-            placeholder='Phường / Xã'
-            onChangeText = {(value) => setVillage(value)}
+          <Dropdown
+            style={styles.dropdown}
+            placeholderStyle={styles.placeholderStyle}
+            selectedTextStyle={styles.selectedTextStyle}
+            data={wards}
+            search
+            labelField="name"
+            valueField="code"
+            placeholder='Chọn thị trấn(xã)'
+            searchPlaceholder="Tìm kiếm..."
+            value={ward}
+            onChange={ward => {
+              setWard(ward);
+            }}
           />
           <TextInput
             style={styles.input}
             value={numHouse}
             placeholder='Đường / Toà nhà'
-            onChangeText = {(value) => setNumHouse(value)}
+            onChangeText={(value) => setNumHouse(value)}
           />
           <TextInput
             style={styles.input}
             value={note}
             placeholder='Ghi chú'
-            onChangeText = {(value) => setNote(value)}
+            onChangeText={(value) => setNote(value)}
           />
         </View>
       </ScrollView>
@@ -131,11 +228,12 @@ const EditScreen = ( {navigation, route} ) => {
         <View style={styles.wapperButton}>
           <Button
             title='Xoá địa chỉ'
-            style={styles.btn} 
+            style={styles.btn}
             onPress={() => {              //Quay về trang đầu tiên
               let check = true;
-              if(handlerDelete()) {
-                navigation.navigate("Home", {check});
+              if (handlerDelete()) {
+                Alert.alert("Thông báo", "Xoá địa chỉ thành công!");
+                navigation.navigate("Home", { check });
               }
             }}
           />
@@ -143,11 +241,12 @@ const EditScreen = ( {navigation, route} ) => {
         <View style={styles.wapperButton}>
           <Button
             title='Lưu'
-            style={styles.btn} 
+            style={styles.btn}
             onPress={() => {              //Quay về trang đầu tiên
               let check = true;
-              if(handlerEdit()) {
-                navigation.navigate("Home", {check});
+              if (handlerEdit()) {
+                Alert.alert("Thông báo", "Sửa địa chỉ thành công!");
+                navigation.navigate("Home", { check });
               }
             }}
           />
@@ -210,6 +309,25 @@ const styles = StyleSheet.create({
     backgroundColor: '#2196F3',
     marginTop: 20,
     borderRadius: 6,
+  },
+
+  dropdown: {
+    height: 50,
+    borderColor: '#ccc',
+    borderWidth: 0.5,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    marginBottom: 14,
+    backgroundColor: '#cccccc3d',
+  },
+
+  placeholderStyle: {
+    color: '#909090',
+    marginLeft: 8,
+  },
+
+  selectedTextStyle: {
+    marginLeft: 8,
   },
 
 });

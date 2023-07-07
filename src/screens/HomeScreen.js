@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   ScrollView, } from 'react-native';
 import Address from '../components/Address/Address'
+import Api from '../../assets/api'
+import axios from 'axios';
 
 const HomeScreen = ( {navigation, route} ) => {
   const [ listUser, setListUser ] = useState([]);
@@ -17,12 +19,12 @@ const HomeScreen = ( {navigation, route} ) => {
     setReload(!reload)
   }
   
-  const getListUser = () => {
-    fetch('https://64a04d95ed3c41bdd7a72f4c.mockapi.io/api/listUser')
-    .then(res => res.json())
-    .then(json => {
-      setListUser(json)
-    })
+  const getListUser = async () => {
+    await axios.get( Api.urlGetListUser() )
+      .then(response => {
+        setListUser(response.data)
+      })
+      .catch(err => console.log(err))
   }
 
   useEffect(() => {
@@ -71,12 +73,7 @@ const HomeScreen = ( {navigation, route} ) => {
             <Address 
               onClick={handlerEdit}
               key={index}
-              id={user.id}
-              name={user.name}
-              phone={user.phone}
-              numHouse={user.numHouse}
-              note={user.note}
-              region={user.region}
+              user={user}
             />
           ))
         }
@@ -122,5 +119,3 @@ const styles = StyleSheet.create({
   },
 
 });
-
-const ham = () => ({})

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,9 +9,11 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-} from 'react-native'
+} from 'react-native';
 import axios from 'axios';
-import Api from '../../assets/api'
+import Api from '../../assets/api';
+import User from '../object/User';
+import CallAPI from '../controller/CallAPI';
 import { Dropdown } from 'react-native-element-dropdown';
 
 const EditScreen = ({ navigation, route }) => {
@@ -26,21 +28,26 @@ const EditScreen = ({ navigation, route }) => {
   const [districts, setDistricts] = useState([]);
   const [provinces, setProvinces] = useState([]);
 
-  var user = {
-    id: route.params.user.id,
-    name: name,
-    phone: phone,
-    province: province,
-    district: district,
-    ward: ward,
-    numHouse: numHouse,
-    note: note,
-  }
+
+  var user = new User(route.params.user.id, name, phone, ward, district, province, numHouse, note);
+
+  // var user = {
+  //   id: route.params.user.id,
+  //   name: name,
+  //   phone: phone,
+  //   province: province,
+  //   district: district,
+  //   ward: ward,
+  //   numHouse: numHouse,
+  //   note: note,
+  // }
 
   const urlUser = `${Api.urlGetListUser()}/${user.id}`
 
   const handlerDelete = () => {
-    if (name.length && phone.length && numHouse.length && Object.keys(ward, district, province).length) {
+    if (name.trim().length && phone.trim().length && numHouse.trim().length
+       && Object.keys(ward, district, province).length) {
+        
       axios.delete(urlUser)
         .then(res => res)
         .catch(err => false)
@@ -53,7 +60,9 @@ const EditScreen = ({ navigation, route }) => {
   }
 
   const handlerEdit = () => {
-    if (name.length && phone.length && numHouse.length && Object.keys(ward, district, province).length) {
+    if (name.trim().length && phone.trim().length && numHouse.trim().length
+       && Object.keys(ward, district, province).length) {
+
       axios.put(urlUser, user)
         .then(res => res)
         .catch(err => false)
@@ -65,63 +74,12 @@ const EditScreen = ({ navigation, route }) => {
     }
   }
 
-  const getListProvinces = async () => {
-    await axios.get(Api.urlGetListProvinces())
-      .then(res => {
-        var data = res.data.map((province) => {
-          return {
-            code: province.code,
-            name: province.name,
-          }
-        })
-        setProvinces(data);
-      })
-      .catch(err => {
-        console.log('Lỗi gọi api tỉnh thành');
-        console.log(err)
-      })
-  }
-
-  const getListDistricts = async (province) => {
-    await axios.get(Api.urlGetListDistricts(province))
-      .then(res => {
-        var data = res.data.districts.map((district) => {
-          return {
-            code: district.code,
-            name: district.name,
-          }
-        })
-        setDistricts(data);
-      })
-      .catch(err => {
-        console.log('Lỗi gọi api quận huyện');
-        console.log(err)
-      })
-  }
-
-  const getListWards = async (district) => {
-    await axios.get(Api.urlGetListWards(district))
-    .then(res => {
-      var data = res.data.wards.map((ward) => {
-        return {
-          code: ward.code,
-          name: ward.name,
-        }
-      })
-      setWards(data);
-    })
-      .catch(err => {
-        console.log('Lỗi gọi api xã');
-        console.log(err)
-      })
-  }
 
   useEffect(() => {
-    getListProvinces();
-    getListDistricts(province.code);
-    getListWards(district.code);
+    CallAPI.getListProvinces(setProvinces);
+    CallAPI.getListDistricts(setDistricts, province.code);
+    CallAPI.getListWards(setWards, district.code);
   }, [])
-
 
   return (
     <View style={styles.container}>
@@ -147,9 +105,11 @@ const EditScreen = ({ navigation, route }) => {
         <View style={styles.form}>
           <TextInput
             style={styles.input}
-            value={name}
+            value={user.name}
             placeholder='Họ và tên'
-            onChangeText={(value) => setName(value)}
+            onChangeText={(value) => {
+              setName(value)
+            }}
           />
           <TextInput
             style={styles.input}
@@ -172,7 +132,7 @@ const EditScreen = ({ navigation, route }) => {
             value={province}
             onChange={province => {
               setProvince(province);
-              getListDistricts(province.code);
+              CallAPI.getListDistricts(setDistricts, province.code);
               setDistrict({});
               setWard({});
               setWards([]);
@@ -190,8 +150,8 @@ const EditScreen = ({ navigation, route }) => {
             searchPlaceholder="Tìm kiếm..."
             value={district}
             onChange={district => {
-              setDistrict(district);
-              getListWards(district.code);
+              setDistrict(district);    
+              CallAPI.getListWards(setWards, district.code);
               setWard({});
             }}
           />
@@ -294,7 +254,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 6,
     marginBottom: 14,
-
   },
 
   btn: {

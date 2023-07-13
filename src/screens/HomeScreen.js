@@ -6,9 +6,8 @@ import {
   StyleSheet, 
   TouchableOpacity,
   ScrollView, } from 'react-native';
-import Address from '../components/Address/Address'
-import Api from '../../assets/api'
-import axios from 'axios';
+import CallAPI from '../controller/CallAPI';
+import Address from '../components/Address/Address';
 
 const HomeScreen = ( {navigation, route} ) => {
   const [ listUser, setListUser ] = useState([]);
@@ -18,17 +17,9 @@ const HomeScreen = ( {navigation, route} ) => {
     route.params.check = false;
     setReload(!reload)
   }
-  
-  const getListUser = async () => {
-    await axios.get( Api.urlGetListUser() )
-      .then(response => {
-        setListUser(response.data)
-      })
-      .catch(err => console.log(err))
-  }
 
   useEffect(() => {
-    getListUser();
+    CallAPI.getListUser(setListUser);
   }, [reload])
 
   const handlerEdit = (user) => {

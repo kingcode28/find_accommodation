@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,9 @@ import {
   TouchableOpacity,
 } from 'react-native'
 import axios from 'axios';
-import Api from '../../assets/api'
+import Api from '../../assets/api';
+import User from '../object/User';
+import CallAPI from '../controller/CallAPI';
 import { Dropdown } from 'react-native-element-dropdown';
 
 const AddScreen = ({ navigation }) => {
@@ -27,18 +29,21 @@ const AddScreen = ({ navigation }) => {
   const [districts, setDistricts] = useState([]);
   const [provinces, setProvinces] = useState([]);
 
-  var user = {
-    name: name,
-    phone: phone,
-    province: province,
-    district: district,
-    ward: ward,
-    numHouse: numHouse,
-    note: note,
-  }
+  var user = new User(0, name, phone, ward, district, province, numHouse, note);
+
+  // var user = {
+  //   name: name,
+  //   phone: phone,
+  //   province: province,
+  //   district: district,
+  //   ward: ward,
+  //   numHouse: numHouse,
+  //   note: note,
+  // }
 
   const handlerAdd = () => {
-    if (name.length && phone.length && numHouse.length && Object.keys(ward, district, province).length) {
+    if (name.trim().length && phone.trim().length && numHouse.trim().length
+      && Object.keys(ward, district, province).length) {
 
       axios.post(`${Api.urlGetListUser()}`, user)
         .then(res => res)
@@ -46,64 +51,13 @@ const AddScreen = ({ navigation }) => {
       return true;
     }
     else {
-      alert("Vui lòng nhập thông tin cần thiết");
+      Alert.alert("Thông báo", "Vui lòng nhập thông tin cần thiết");
       return false;
     }
   }
 
-  const getListProvinces = () => {
-    axios.get(Api.urlGetListProvinces())
-      .then(res => {
-        var data = res.data.map((province) => {
-          return {
-            code: province.code,
-            name: province.name,
-          }
-        })
-        setProvinces(data);
-      })
-      .catch(err => {
-        console.log('Lỗi gọi api tỉnh thành');
-        console.log(err)
-      })
-  }
-
-  const getListDistricts = (province) => {
-    axios.get(Api.urlGetListDistricts(province))
-      .then(res => {
-        var data = res.data.districts.map((district) => {
-          return {
-            code: district.code,
-            name: district.name,
-          }
-        })
-        setDistricts(data);
-      })
-      .catch(err => {
-        console.log('Lỗi gọi api quận huyện');
-        console.log(err)
-      })
-  }
-
-  const getListWards = (district) => {
-    axios.get(Api.urlGetListWards(district))
-    .then(res => {
-      var data = res.data.wards.map((ward) => {
-        return {
-          code: ward.code,
-          name: ward.name,
-        }
-      })
-      setWards(data);
-    })
-      .catch(err => {
-        console.log('Lỗi gọi api xã');
-        console.log(err)
-      })
-  }
-
   useEffect(() => {
-    getListProvinces();
+    CallAPI.getListProvinces(setProvinces);
   }, [])
 
   return (
@@ -138,7 +92,9 @@ const AddScreen = ({ navigation }) => {
             maxLength={10}
             placeholder='Số điện thoại'
             keyboardType='phone-pad'
-            onChangeText={(value) => setPhone(value)}
+            onChangeText={(value) => {
+              setPhone(value)
+            }}
           />
           <Dropdown
             style={styles.dropdown}
@@ -150,10 +106,10 @@ const AddScreen = ({ navigation }) => {
             valueField="code"
             placeholder='Chọn tỉnh(thành phố)'
             searchPlaceholder="Tìm kiếm..."
-            value={name}
+            value={province}
             onChange={province => {
               setProvince(province);
-              getListDistricts(province.code);
+              CallAPI.getListDistricts(setDistricts, province.code);
               setDistrict({});
               setWard({});
               setWards([]);
@@ -169,10 +125,10 @@ const AddScreen = ({ navigation }) => {
             valueField="code"
             placeholder='Chọn quận(huyện)'
             searchPlaceholder="Tìm kiếm..."
-            value={name}
+            value={district}
             onChange={district => {
               setDistrict(district);
-              getListWards(district.code);
+              CallAPI.getListWards(setWards, district.code);
               setWard({});
             }}
           />
@@ -186,22 +142,24 @@ const AddScreen = ({ navigation }) => {
             valueField="code"
             placeholder='Chọn thị trấn(xã)'
             searchPlaceholder="Tìm kiếm..."
-            value={name}
+            value={ward}
             onChange={ward => {
               setWard(ward);
             }}
           />
           <TextInput
             style={styles.input}
-            value={numHouse}
             placeholder='Đường / Toà nhà'
-            onChangeText={(value) => setNumHouse(value)}
+            onChangeText={(value) => {
+              setNumHouse(value)
+            }}
           />
           <TextInput
             style={styles.input}
-            value={note}
             placeholder='Ghi chú'
-            onChangeText={(value) => setNote(value)}
+            onChangeText={(value) => {
+              setNote(value)
+            }}
           />
         </View>
       </ScrollView>
